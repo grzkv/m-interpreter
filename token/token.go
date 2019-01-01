@@ -29,4 +29,8 @@ const (
 	// keywords
 	FUNCTION = "FUNCTION"
 	LET      = "LET"
+
+	IDENT = "IDENT"
+
+	INT = "INT"
 )

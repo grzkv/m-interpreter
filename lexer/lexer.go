@@ -1,7 +1,9 @@
 package lexer
 
 import "github.com/grzkv/m-interpreter/token"
+import "log"
 
+// Lexer breaks code into tokens
 type Lexer struct {
 	input   string
 	pos     int
@@ -9,14 +11,16 @@ type Lexer struct {
 	current byte
 }
 
+// New makes a lexer
 func New(input string) *Lexer {
 	l := Lexer{input: input}
-	l.Read()
+	l.readCh()
 
 	return &l
 }
 
-func (l *Lexer) Read() {
+// Read a char. Puts it in the lexer buffer
+func (l *Lexer) readCh() {
 	if l.rPos >= len(l.input) {
 		l.current = 0
 	} else {
@@ -24,34 +28,79 @@ func (l *Lexer) Read() {
 	}
 
 	l.pos = l.rPos
-	l.rPos += 1
+	l.rPos++
 }
 
+// NextToken gets next token from the code
 func (l *Lexer) NextToken() token.Token {
+	l.eatWhitespace()
+
 	var t token.Token
 	switch l.current {
 	case '+':
-		t = token.Token{token.PLUS, "+"}
+		t = token.Token{Typ: token.PLUS, Literal: "+"}
 	case '=':
-		t = token.Token{token.ASSIGN, "="}
+		t = token.Token{Typ: token.ASSIGN, Literal: "="}
 	case ',':
-		t = token.Token{token.COMMA, ","}
+		t = token.Token{Typ: token.COMMA, Literal: ","}
 	case ';':
-		t = token.Token{token.SEMICOLON, ";"}
+		t = token.Token{Typ: token.SEMICOLON, Literal: ";"}
 	case '(':
-		t = token.Token{token.LPAREN, "("}
+		t = token.Token{Typ: token.LPAREN, Literal: "("}
 	case ')':
-		t = token.Token{token.RPAREN, ")"}
+		t = token.Token{Typ: token.RPAREN, Literal: ")"}
 	case '{':
-		t = token.Token{token.LBRACE, "{"}
+		t = token.Token{Typ: token.LBRACE, Literal: "{"}
 	case '}':
-		t = token.Token{token.RBRACE, "}"}
+		t = token.Token{Typ: token.RBRACE, Literal: "}"}
 	case 0:
-		t = token.Token{token.EOF, ""}
+		t = token.Token{Typ: token.EOF, Literal: ""}
 	default:
-		t = token.Token{token.ILLEGAL, ""}
+		if isLetter(l.current) {
+			word := l.readWord()
+			log.Println(word)
+			
+			kw, prs := keywords[word]
+
+			if prs {
+				t = token.Token{Typ: kw, Literal: word}
+			}else{
+				t = token.Token{Typ: token.IDENT, Literal: word}
+			}
+		}
 	}
 
-	l.Read()
+	l.readCh()
 	return t
+}
+
+func (l *Lexer) eatWhitespace() {
+	for isWhitespace(l.current) {
+		l.readCh()
+	}
+}
+
+var keywords = map[string]token.Typ {
+	"fn": token.FUNCTION,
+	"let": token.LET,
+}
+
+func (l *Lexer) readWord() string {
+	firstLetterPos := l.pos
+	for isLetter(l.current) {
+		l.readCh();
+	}
+
+	return l.input[firstLetterPos:l.pos]
+}
+
+func isLetter(c byte) bool {
+	return (c >= 'a' && c <= 'z') ||
+		(c >= 'A' && c <= 'Z') ||
+		(c >= 0 && c <= 9) ||
+		c == '_';
+}
+
+func isWhitespace(c byte) bool {
+	return c == ' ' || c == '\t' || c == '\n' || c == '\r'
 }
