@@ -11,7 +11,7 @@ type ExpToken struct {
 	expLiteral string
 }
 
-func TestNextTokenSimple(t *testing.T) {
+func TestNextTokenStarter(t *testing.T) {
 	input := `(){}+=,;`
 
 	tests := []ExpToken{
@@ -28,7 +28,7 @@ func TestNextTokenSimple(t *testing.T) {
 	runLexerTest(t, input, tests)
 }
 
-func TestNextToken(t *testing.T) {
+func TestNextTokenBasic(t *testing.T) {
 	input := `let five = 5;
 	let ten = 10;
 	
@@ -78,7 +78,67 @@ func TestNextToken(t *testing.T) {
 		{IDENT, "five"},
 		{COMMA, ","},
 		{IDENT, "ten"},
+		{RPAREN, ")"},
 		{SEMICOLON, ";"},
+		{EOF, ""},
+	}
+
+	runLexerTest(t, input, tests)
+}
+
+func TestNextTokenFull(t *testing.T) {
+	input := `
+	!-/*5;
+	5 < 10 > 5;
+	if (5 < 10) {
+		return true;
+	} else {
+		return false;
+	}
+
+	5 == 10;
+	8 != 8;
+	`
+
+	tests := []ExpToken{
+		{NOT, "!"},
+		{MINUS, "-"},
+		{DIVIDE, "/"},
+		{MULT, "*"},
+		{INT, "5"},
+		{SEMICOLON, ";"},
+		{INT, "5"},
+		{LESS, "<"},
+		{INT, "10"},
+		{GREATER, ">"},
+		{INT, "5"},
+		{SEMICOLON, ";"},
+		{IF, "if"},
+		{LPAREN, "("},
+		{INT, "5"},
+		{LESS, "<"},
+		{INT, "10"},
+		{RPAREN, ")"},
+		{LBRACE, "{"},
+		{RETURN, "return"},
+		{TRUE, "true"},
+		{SEMICOLON, ";"},
+		{RBRACE, "}"},
+		{ELSE, "else"},
+		{LBRACE, "{"},
+		{RETURN, "return"},
+		{FALSE, "false"},
+		{SEMICOLON, ";"},
+		{RBRACE, "}"},
+		{INT, "5"},
+		{EQ, "=="},
+		{INT, "10"},
+		{SEMICOLON, ";"},
+		{INT, "8"},
+		{NEQ, "!="},
+		{INT, "8"},
+		{SEMICOLON, ";"},
+		{EOF, ""},
 	}
 
 	runLexerTest(t, input, tests)
