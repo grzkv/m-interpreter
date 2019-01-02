@@ -1,7 +1,7 @@
 package lexer
 
 import "github.com/grzkv/m-interpreter/token"
-import "log"
+// import "log"
 
 // Lexer breaks code into tokens
 type Lexer struct {
@@ -68,19 +68,19 @@ func (l *Lexer) NextToken() token.Token {
 	default:
 		if isLetter(l.current) {
 			word := l.readWord()
-			log.Printf("read word %s", word)
+			// log.Printf("read word %s", word)
 
 			kw, prs := keywords[word]
 
 			if prs {
-				log.Println("classified word as a keyword")
+				// log.Println("classified word as a keyword")
 				t = token.Token{Typ: kw, Literal: word}
 			} else {
 				t = token.Token{Typ: token.IDENT, Literal: word}
 			}
 		} else if isDigit(l.current) {
 			number := l.readNumber()
-			log.Printf("read number %s", number)
+			// log.Printf("read number %s", number)
 
 			t = token.Token{Typ: token.INT, Literal: number}
 		} else {
