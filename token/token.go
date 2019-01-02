@@ -44,8 +44,8 @@ const (
 	MULT    = "*"
 	LESS    = "<"
 	GREATER = ">"
-	EQ = "=="
-	NEQ = "!="
+	EQ      = "=="
+	NEQ     = "!="
 
 	IDENT = "IDENT"
 

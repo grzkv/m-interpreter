@@ -1,6 +1,7 @@
 package lexer
 
 import "github.com/grzkv/m-interpreter/token"
+
 // import "log"
 
 // Lexer breaks code into tokens
