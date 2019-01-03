@@ -38,7 +38,7 @@ func (p *Program) TokenLiteral() string {
 type LetSt struct {
 	Token token.Token // always LET
 	Ident *IdentifierEx
-	Expr ExprNode
+	Expr  ExprNode
 }
 
 // TokenLiteral makes LetSt a Node
@@ -52,6 +52,7 @@ func (s *LetSt) statement() {}
 // IdentifierEx is an identifier expression
 type IdentifierEx struct {
 	Token token.Token // always IDENT
+	Value string
 }
 
 // TokenLiteral makes IdentifierEx a Node
