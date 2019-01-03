@@ -72,6 +72,8 @@ func (p *Parser) parseStatement() ast.StNode {
 	switch p.current.Typ {
 	case token.LET:
 		return p.parseLetSt()
+	case token.RETURN:
+		return p.parseReturnSt()
 	default:
 		p.nextToken()
 		return nil
@@ -121,4 +123,21 @@ func (p *Parser) parseLetSt() *ast.LetSt {
 	st.Expr = nil
 
 	return &st
+}
+
+func (p *Parser) parseReturnSt() *ast.ReturnSt {
+	if p.current.Typ != token.RETURN {
+		p.errors = append(p.errors, fmt.Sprintf("Got wrong token type %s for return statment", p.current.Typ))
+		log.Printf("error: got wrong token type for return statment")
+	}
+
+	returnSt := ast.ReturnSt{RootToken: p.current, Expr: nil}
+
+	for p.current.Typ != token.SEMICOLON {
+		p.nextToken()
+	}
+
+	p.nextToken() // pass semicolon
+
+	return &returnSt
 }

@@ -49,6 +49,20 @@ func (s *LetSt) TokenLiteral() string {
 // statement makes LetSt a statement
 func (s *LetSt) statement() {}
 
+
+// ReturnSt represents the *return* statement
+type ReturnSt struct {
+	RootToken token.Token
+	Expr ExprNode
+}
+
+// TokenLiteral makes ReturnSt a Node
+func (s *ReturnSt) TokenLiteral() string {
+	return s.RootToken.Literal
+}
+
+func (s *ReturnSt) statement() { }
+
 // IdentifierEx is an identifier expression
 type IdentifierEx struct {
 	Token token.Token // always IDENT

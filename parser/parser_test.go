@@ -65,3 +65,36 @@ func testLetStatement(t *testing.T, st ast.StNode, expIdent string) {
 		t.Fatalf("Expected identifier value %s, got %s", expIdent, letSt.Ident.Value)
 	}
 }
+
+func TestReturnStatement(t *testing.T) {
+	input := `
+	return 1;
+	return 2;
+	return (a + b);
+	return 88888;
+	`
+	numSt := 4
+
+	l := lexer.New(input)
+	p := New(l)
+
+	prg := p.Parse()
+
+	if prg == nil {
+		t.Fatal("Got nil program")
+	}
+
+	if len(prg.StNodes) != numSt {
+		t.Fatalf("Got %d statements, expected %d", len(prg.StNodes), numSt)
+	}
+
+	for i, st := range prg.StNodes {
+		if st.TokenLiteral() != "return" {
+			t.Fatalf("Error in statement %d. Expected token literal return, got %s", i, st.TokenLiteral())
+		}
+		_, ok := st.(*ast.ReturnSt) 
+		if !ok {
+			t.Fatalf("Got wrong node type, expected return statement")
+		}
+	}
+}
