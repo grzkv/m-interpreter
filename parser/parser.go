@@ -6,6 +6,7 @@ import (
 	"github.com/grzkv/m-interpreter/lexer"
 	"github.com/grzkv/m-interpreter/token"
 	"log"
+	"strconv"
 )
 
 // Parser parses the code tokenized by lexer
@@ -52,6 +53,9 @@ func New(l *lexer.Lexer) *Parser {
 
 	p.prefixParseFns = make(map[token.Typ]prefixParseFn)
 	p.prefixParseFns[token.IDENT] = p.parseIdent
+	p.prefixParseFns[token.INT] = p.parseIntegerLiteral
+	p.prefixParseFns[token.NOT] = p.parsePrefixExpr
+	p.prefixParseFns[token.MINUS] = p.parsePrefixExpr
 
 	p.nextToken()
 	p.nextToken()
@@ -76,7 +80,7 @@ func (p *Parser) Parse() *ast.Program {
 		if st != nil {
 			prg.StNodes = append(prg.StNodes, st)
 		} else {
-			log.Println("error: got nil statment during parsing")
+			log.Println("error: got nil statement during parsing")
 		}
 	}
 
@@ -184,8 +188,8 @@ func (p *Parser) parseLetSt() *ast.LetSt {
 
 func (p *Parser) parseReturnSt() *ast.ReturnSt {
 	if p.current.Typ != token.RETURN {
-		p.errors = append(p.errors, fmt.Sprintf("Got wrong token type %s for return statment", p.current.Typ))
-		log.Printf("error: got wrong token type for return statment")
+		p.errors = append(p.errors, fmt.Sprintf("Got wrong token type %s for return statement", p.current.Typ))
+		log.Printf("error: got wrong token type for return statement")
 	}
 
 	returnSt := ast.ReturnSt{RootToken: p.current, Expr: nil}
@@ -197,4 +201,34 @@ func (p *Parser) parseReturnSt() *ast.ReturnSt {
 	p.nextToken() // pass semicolon
 
 	return &returnSt
+}
+
+func (p *Parser) parseIntegerLiteral() ast.ExprNode {
+	intLitExpr := ast.IntegerLiteralEx{Token: p.current}
+
+	val, err := strconv.ParseInt(p.current.Literal, 0, 64)
+
+	if err != nil {
+		p.errors = append(p.errors, fmt.Sprintf("Error while parsing integer literal: %v", err))
+		log.Println("error parsing integer literal")
+
+		return nil
+	}
+
+	intLitExpr.Value = val
+
+	return &intLitExpr
+}
+
+func (p *Parser) parsePrefixExpr() ast.ExprNode {
+	prefixExpr := ast.PrefixExpr{
+		Token: p.current,
+		Op:    p.current.Literal,
+	}
+
+	p.nextToken()
+
+	prefixExpr.Right = p.parseExpr(PREFIX)
+
+	return &prefixExpr
 }

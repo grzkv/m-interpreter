@@ -125,3 +125,41 @@ func (e *IdentifierEx) expr() {}
 func (e *IdentifierEx) String() string {
 	return e.Value
 }
+
+// IntegerLiteralEx is an integer value
+type IntegerLiteralEx struct {
+	Token token.Token
+	Value int64
+}
+
+// TokenLiteral makes integer literal a Node
+func (expr *IntegerLiteralEx) TokenLiteral() string {
+	return expr.Token.Literal
+}
+
+// String needed to make a Node
+func (expr *IntegerLiteralEx) String() string {
+	return expr.Token.Literal
+}
+
+func (expr *IntegerLiteralEx) expr() {}
+
+// PrefixExpr represents e.g. !true, -(a+b), -5, etc.
+type PrefixExpr struct {
+	Token token.Token
+	Op    string
+	Right ExprNode
+}
+
+// TokenLiteral makes PrefixExpr a Node
+func (expr *PrefixExpr) TokenLiteral() string {
+	return expr.Token.Literal
+}
+
+// String makes PrefixExpr a Node
+func (expr *PrefixExpr) String() string {
+	return "(" + expr.Op + expr.Right.String() + ")"
+}
+
+// This makes PrefixExpr and expression
+func (expr *PrefixExpr) expr() {}

@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/grzkv/m-interpreter/ast"
@@ -135,5 +136,107 @@ func TestParsingIdentExpression(t *testing.T) {
 
 	if identExpr.Value != "beth" {
 		t.Fatalf("wanted idnet expression value *beth*, got %s", identExpr.Value)
+	}
+}
+
+func TestParsingIntExpression(t *testing.T) {
+	input := "5;"
+	expNumSt := 1
+
+	l := lexer.New(input)
+	p := New(l)
+
+	prg := p.Parse()
+
+	if len(p.errors) != 0 {
+		t.Fatal("Parser has errors")
+	}
+
+	if prg == nil {
+		t.Fatal("Parsed program is nil")
+	}
+
+	if len(prg.StNodes) != expNumSt {
+		t.Fatalf("Want %d statements, got %d", expNumSt, len(prg.StNodes))
+	}
+
+	exprSt, ok := (prg.StNodes[0]).(*ast.ExpressionSt)
+
+	if !ok {
+		t.Fatalf("Expected expression statement, got %T", prg.StNodes[0])
+	}
+
+	intLiteralEx, ok := (exprSt.Expr).(*ast.IntegerLiteralEx)
+
+	if !ok {
+		t.Fatalf("Expected integer literal node, got %T", exprSt.Expr)
+	}
+
+	if intLiteralEx.TokenLiteral() != "5" {
+		t.Fatalf("Expected token literal 5 from int literal, got %s", intLiteralEx.TokenLiteral())
+	}
+
+	if intLiteralEx.Value != 5 {
+		t.Fatalf("Expected int literal value to be %d, got %d", 5, intLiteralEx.Value)
+	}
+}
+
+func TestPrefixExpressionParsing(t *testing.T) {
+	tests := []struct {
+		in  string
+		op  string
+		val int64
+	}{
+		{in: "!1;", op: "!", val: 1},
+		{in: "-11;", op: "-", val: 11},
+	}
+
+	for _, tst := range tests {
+		l := lexer.New(tst.in)
+		p := New(l)
+		prg := p.Parse()
+
+		if len(p.errors) != 0 {
+			t.Fatal("Parser has errors")
+		}
+
+		if prg == nil {
+			t.Fatal("Parser returned nil program")
+		}
+
+		if len(prg.StNodes) != 1 {
+			t.Fatal("Parser got incorrect numbers of statements")
+		}
+
+		exprSt, ok := (prg.StNodes[0]).(*ast.ExpressionSt)
+		if !ok {
+			t.Fatalf("Want expr st, got %T", prg.StNodes[0])
+		}
+
+		prefExpr, ok := (exprSt.Expr).(*ast.PrefixExpr)
+		if !ok {
+			t.Fatalf("Want prefix expr, got %T", exprSt.Expr)
+		}
+
+		if prefExpr.Op != tst.op {
+			t.Fatalf("Want op %s in prefix expr, got %s", tst.op, prefExpr.Op)
+		}
+
+		testIntLiteral(t, prefExpr.Right, tst.val)
+	}
+}
+
+func testIntLiteral(t *testing.T, expr ast.ExprNode, expectedVal int64) {
+	intLiteralExpr, ok := expr.(*ast.IntegerLiteralEx)
+	if !ok {
+		t.Fatalf("Wanted integer expression node, got %T", expr)
+	}
+
+	if intLiteralExpr.Value != expectedVal {
+		t.Fatalf("Expected val %d of integer literal expr, got %d", expectedVal, intLiteralExpr.Value)
+	}
+
+	if intLiteralExpr.TokenLiteral() != fmt.Sprintf("%d", expectedVal) {
+		t.Fatalf("Expected token literal %q, got %q", fmt.Sprintf("%d", expectedVal), intLiteralExpr.TokenLiteral())
 	}
 }
