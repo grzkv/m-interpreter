@@ -2,10 +2,10 @@ package parser
 
 import (
 	"fmt"
-	"log"
 	"github.com/grzkv/m-interpreter/ast"
 	"github.com/grzkv/m-interpreter/lexer"
 	"github.com/grzkv/m-interpreter/token"
+	"log"
 )
 
 // Parser parses the code tokenized by lexer
@@ -14,14 +14,44 @@ type Parser struct {
 
 	current token.Token
 	peek    token.Token
-	errors []string
+	errors  []string
+
+	prefixParseFns map[token.Typ]prefixParseFn
+	infixParseFns  map[token.Typ]infixParseFn
 }
+
+const (
+	// operation precedence
+	_ int = iota
+	// LOWEST is the default
+	LOWEST
+	// EQ is ==
+	EQ
+	// LESSGR is for > and <
+	LESSGR
+	// SUM is for +
+	SUM
+	// PRODUCT is for *
+	PRODUCT
+	// PREFIX is for prefix oprators
+	PREFIX
+	// CALL is for function calls
+	CALL
+)
+
+type (
+	prefixParseFn func() ast.ExprNode
+	infixParseFn  func(ast.ExprNode) ast.ExprNode
+)
 
 // New makes a new parser. Usable out-of-the-box
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{l: l}
 
 	log.Println("Making new parser")
+
+	p.prefixParseFns = make(map[token.Typ]prefixParseFn)
+	p.prefixParseFns[token.IDENT] = p.parseIdent
 
 	p.nextToken()
 	p.nextToken()
@@ -45,7 +75,7 @@ func (p *Parser) Parse() *ast.Program {
 
 		if st != nil {
 			prg.StNodes = append(prg.StNodes, st)
-		}else{
+		} else {
 			log.Println("error: got nil statment during parsing")
 		}
 	}
@@ -60,7 +90,7 @@ func (p *Parser) printErrorsIfAny() {
 		return
 	}
 
-	fmt.Printf("PARSER GOT %d ERRORS:\n", len(p.errors));
+	fmt.Printf("PARSER GOT %d ERRORS:\n", len(p.errors))
 	for _, e := range p.errors {
 		fmt.Println(e)
 	}
@@ -75,9 +105,36 @@ func (p *Parser) parseStatement() ast.StNode {
 	case token.RETURN:
 		return p.parseReturnSt()
 	default:
+		return p.parseExpressionSt()
+	}
+}
+
+func (p *Parser) parseExpressionSt() *ast.ExpressionSt {
+	st := ast.ExpressionSt{RootToken: p.current}
+
+	st.Expr = p.parseExpr(LOWEST)
+
+	if p.peek.Typ == token.SEMICOLON {
 		p.nextToken()
+	}
+
+	p.nextToken()
+
+	return &st
+}
+
+func (p *Parser) parseExpr(prio int) ast.ExprNode {
+	prefixFn := p.prefixParseFns[p.current.Typ]
+
+	if prefixFn == nil {
 		return nil
 	}
+
+	return prefixFn()
+}
+
+func (p *Parser) parseIdent() ast.ExprNode {
+	return &ast.IdentifierEx{Token: p.current, Value: p.current.Literal}
 }
 
 func (p *Parser) parseLetSt() *ast.LetSt {
@@ -109,7 +166,7 @@ func (p *Parser) parseLetSt() *ast.LetSt {
 	// go until semicolon
 	p.nextToken()
 
-	if (p.current.Typ == token.SEMICOLON) {
+	if p.current.Typ == token.SEMICOLON {
 		log.Println("error: empty expression in let statement")
 		p.errors = append(p.errors, "wrong token type")
 		return nil

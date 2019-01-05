@@ -42,7 +42,7 @@ func TestLet(t *testing.T) {
 	}
 }
 
-func testLetStatement(t *testing.T, st ast.StNode, expIdent string) {
+func testLetStatement(t *testing.T, st ast.Node, expIdent string) {
 	if st.TokenLiteral() != "let" {
 		t.Fatalf("Expected token literal let, got %s", st.TokenLiteral())
 	}
@@ -92,9 +92,48 @@ func TestReturnStatement(t *testing.T) {
 		if st.TokenLiteral() != "return" {
 			t.Fatalf("Error in statement %d. Expected token literal return, got %s", i, st.TokenLiteral())
 		}
-		_, ok := st.(*ast.ReturnSt) 
+		_, ok := st.(*ast.ReturnSt)
 		if !ok {
 			t.Fatalf("Got wrong node type, expected return statement")
 		}
+	}
+}
+
+func TestParsingIdentExpression(t *testing.T) {
+	input := "beth;"
+	const expNumSt = 1
+
+	l := lexer.New(input)
+	p := New(l)
+
+	prg := p.Parse()
+	if len(p.errors) != 0 {
+		t.Fatalf("Parser got errors")
+	}
+
+	if prg == nil {
+		t.Fatal("Got nil program")
+	}
+
+	if len(prg.StNodes) != expNumSt {
+		t.Fatalf("Got %d nodes instead of %d", len(prg.StNodes), expNumSt)
+	}
+
+	exprSt, ok := (prg.StNodes[0]).(*ast.ExpressionSt)
+	if !ok {
+		t.Fatalf("Wanted expr st node, got %T", prg.StNodes[0])
+	}
+
+	identExpr, ok := exprSt.Expr.(*ast.IdentifierEx)
+	if !ok {
+		t.Fatalf("Wanted expr type identifier, got %T", prg.StNodes[0])
+	}
+
+	if identExpr.Token.Literal != "beth" {
+		t.Fatalf("Wanted token literal *beth*, got %s", identExpr.Token.Literal)
+	}
+
+	if identExpr.Value != "beth" {
+		t.Fatalf("wanted idnet expression value *beth*, got %s", identExpr.Value)
 	}
 }

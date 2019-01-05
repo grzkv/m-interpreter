@@ -2,11 +2,13 @@ package ast
 
 import (
 	"github.com/grzkv/m-interpreter/token"
+	"strings"
 )
 
 // Node represents a node in AST. Can be either an expression or a statement
 type Node interface {
 	TokenLiteral() string
+	String() string
 }
 
 // ExprNode is an expression node
@@ -23,7 +25,7 @@ type StNode interface {
 
 // Program represents the whole interpreted program. Root of AST
 type Program struct {
-	StNodes []StNode
+	StNodes []Node
 }
 
 // TokenLiteral makes Program a Node
@@ -32,6 +34,16 @@ func (p *Program) TokenLiteral() string {
 		return ""
 	}
 	return p.StNodes[0].TokenLiteral()
+}
+
+func (p *Program) String() string {
+	var b strings.Builder
+
+	for _, s := range p.StNodes {
+		b.WriteString(s.String() + "\n")
+	}
+
+	return b.String()
 }
 
 // LetSt is the *let* statement
@@ -49,11 +61,20 @@ func (s *LetSt) TokenLiteral() string {
 // statement makes LetSt a statement
 func (s *LetSt) statement() {}
 
+func (s *LetSt) String() string {
+	var b strings.Builder
+
+	b.WriteString("let ")
+	b.WriteString(s.Ident.String() + " = ")
+	b.WriteString(s.Expr.String() + ";")
+
+	return b.String()
+}
 
 // ReturnSt represents the *return* statement
 type ReturnSt struct {
 	RootToken token.Token
-	Expr ExprNode
+	Expr      ExprNode
 }
 
 // TokenLiteral makes ReturnSt a Node
@@ -61,7 +82,31 @@ func (s *ReturnSt) TokenLiteral() string {
 	return s.RootToken.Literal
 }
 
-func (s *ReturnSt) statement() { }
+func (s *ReturnSt) statement() {}
+
+func (s *ReturnSt) String() string {
+	return s.RootToken.Literal + " " + s.Expr.String()
+}
+
+// ExpressionSt represents statemnets like > 1 + 1;
+type ExpressionSt struct {
+	RootToken token.Token
+	Expr      ExprNode
+}
+
+// TokenLiteral makes expression statement a node
+func (s *ExpressionSt) TokenLiteral() string {
+	return s.RootToken.Literal
+}
+
+func (s *ExpressionSt) statement() {}
+
+func (s *ExpressionSt) String() string {
+	if s != nil {
+		return s.Expr.String()
+	}
+	return ""
+}
 
 // IdentifierEx is an identifier expression
 type IdentifierEx struct {
@@ -76,3 +121,7 @@ func (e *IdentifierEx) TokenLiteral() string {
 
 // ex makes IdentifierEx an expression
 func (e *IdentifierEx) expr() {}
+
+func (e *IdentifierEx) String() string {
+	return e.Value
+}
