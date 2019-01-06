@@ -240,3 +240,56 @@ func testIntLiteral(t *testing.T, expr ast.ExprNode, expectedVal int64) {
 		t.Fatalf("Expected token literal %q, got %q", fmt.Sprintf("%d", expectedVal), intLiteralExpr.TokenLiteral())
 	}
 }
+
+func TestParsingInfixExpr(t *testing.T) {
+	tests := []struct {
+		in string
+		lval int64
+		op string
+		rval int64
+	} {
+		{"1 + 1", 1, "+", 1},
+		{"1 - 1", 1, "-", 1},
+		{"1 * 1", 1, "*", 1},
+		{"1 / 1", 1, "/", 1},
+		{"1 > 1", 1, ">", 1},
+		{"1 < 1", 1, "<", 1},
+		{"1 == 1", 1, "==", 1},
+		{"1 != 1", 1, "!=", 1},
+	}
+
+	for _, tst := range tests {
+		l := lexer.New(tst.in)
+		p := New(l)
+
+		prg := p.Parse()
+		if len(p.errors) != 0 {
+			t.Fatalf("Parser got errors")
+		}
+
+		if prg == nil {
+			t.Fatalf("Program is nil")
+		}
+
+		if len(prg.StNodes) != 1 {
+			t.Fatalf("Expected one statement, got %d", len(prg.StNodes))
+		}
+
+		exprSt, ok := (prg.StNodes[0]).(*ast.ExpressionSt)
+		if !ok {
+			t.Fatalf("Expression statement expected")
+		}
+		
+		infixExpr, ok := (exprSt.Expr).(*ast.InfixExpr)
+		if !ok {
+			t.Fatalf("Expected infix expression, got %T", exprSt.Expr)
+		}
+
+		testIntLiteral(t, infixExpr.Left, tst.lval)
+		testIntLiteral(t, infixExpr.Right, tst.rval)
+
+		if infixExpr.Op != tst.op {
+			t.Fatalf("Expected oprator %s, got %s", tst.op, infixExpr.Op)
+		}
+	}
+}

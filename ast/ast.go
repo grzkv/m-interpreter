@@ -163,3 +163,30 @@ func (expr *PrefixExpr) String() string {
 
 // This makes PrefixExpr and expression
 func (expr *PrefixExpr) expr() {}
+
+// InfixExpr represents *1+1*, *(3-2) + (a * b)*, etc.
+type InfixExpr struct {
+	OpToken token.Token
+	Left ExprNode
+	Op string
+	Right ExprNode
+}
+
+// TokenLiteral makes InfixExpr a Node
+func (expr *InfixExpr) TokenLiteral() string {
+	return expr.OpToken.Literal
+}
+
+func (expr *InfixExpr) String() string {
+	var b strings.Builder
+
+	b.WriteString("(")
+	b.WriteString(expr.Left.String())
+	b.WriteString(" " + expr.Op + " ")
+	b.WriteString(expr.Right.String())
+	b.WriteString(")")
+
+	return b.String()
+}
+
+func (expr *InfixExpr) expr() {}

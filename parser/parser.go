@@ -40,6 +40,26 @@ const (
 	CALL
 )
 
+var precedences = map[token.Typ]int{
+	token.EQ:      EQ,
+	token.NEQ:     EQ,
+	token.LESS:    LESSGR,
+	token.GREATER: LESSGR,
+	token.PLUS:    SUM,
+	token.MINUS:   SUM,
+	token.DIVIDE:  PRODUCT,
+	token.MULT:    PRODUCT,
+	token.LPAREN:  CALL,
+}
+
+func getPrecedence(t token.Token) int {
+	if prec, ok := precedences[t.Typ]; ok {
+		return prec
+	}
+
+	return LOWEST
+}
+
 type (
 	prefixParseFn func() ast.ExprNode
 	infixParseFn  func(ast.ExprNode) ast.ExprNode
@@ -56,6 +76,16 @@ func New(l *lexer.Lexer) *Parser {
 	p.prefixParseFns[token.INT] = p.parseIntegerLiteral
 	p.prefixParseFns[token.NOT] = p.parsePrefixExpr
 	p.prefixParseFns[token.MINUS] = p.parsePrefixExpr
+
+	p.infixParseFns = make(map[token.Typ]infixParseFn)
+	p.infixParseFns[token.PLUS] = p.parseInfixExpr
+	p.infixParseFns[token.MINUS] = p.parseInfixExpr
+	p.infixParseFns[token.MULT] = p.parseInfixExpr
+	p.infixParseFns[token.DIVIDE] = p.parseInfixExpr
+	p.infixParseFns[token.GREATER] = p.parseInfixExpr
+	p.infixParseFns[token.LESS] = p.parseInfixExpr
+	p.infixParseFns[token.EQ] = p.parseInfixExpr
+	p.infixParseFns[token.NEQ] = p.parseInfixExpr
 
 	p.nextToken()
 	p.nextToken()
@@ -134,7 +164,20 @@ func (p *Parser) parseExpr(prio int) ast.ExprNode {
 		return nil
 	}
 
-	return prefixFn()
+	left := prefixFn()
+
+	for !(p.peek.Typ == token.SEMICOLON) && prio < getPrecedence(p.peek) {
+		infix := p.infixParseFns[p.peek.Typ]
+		if infix == nil {
+			return left
+		}
+
+		p.nextToken()
+
+		left = infix(left)
+	}
+
+	return left
 }
 
 func (p *Parser) parseIdent() ast.ExprNode {
@@ -231,4 +274,19 @@ func (p *Parser) parsePrefixExpr() ast.ExprNode {
 	prefixExpr.Right = p.parseExpr(PREFIX)
 
 	return &prefixExpr
+}
+
+func (p *Parser) parseInfixExpr(left ast.ExprNode) ast.ExprNode {
+	expr := &ast.InfixExpr{
+		OpToken: p.current,
+		Op: p.current.Literal,
+		Left: left,
+	}
+
+	precdence := getPrecedence(p.current)
+	p.nextToken()
+
+	expr.Right = p.parseExpr(precdence)
+
+	return expr
 }
