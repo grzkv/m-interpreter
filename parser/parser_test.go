@@ -243,11 +243,11 @@ func testIntLiteral(t *testing.T, expr ast.ExprNode, expectedVal int64) {
 
 func TestParsingInfixExpr(t *testing.T) {
 	tests := []struct {
-		in string
+		in   string
 		lval int64
-		op string
+		op   string
 		rval int64
-	} {
+	}{
 		{"1 + 1", 1, "+", 1},
 		{"1 - 1", 1, "-", 1},
 		{"1 * 1", 1, "*", 1},
@@ -279,7 +279,7 @@ func TestParsingInfixExpr(t *testing.T) {
 		if !ok {
 			t.Fatalf("Expression statement expected")
 		}
-		
+
 		infixExpr, ok := (exprSt.Expr).(*ast.InfixExpr)
 		if !ok {
 			t.Fatalf("Expected infix expression, got %T", exprSt.Expr)
@@ -290,6 +290,48 @@ func TestParsingInfixExpr(t *testing.T) {
 
 		if infixExpr.Op != tst.op {
 			t.Fatalf("Expected oprator %s, got %s", tst.op, infixExpr.Op)
+		}
+	}
+}
+
+func TestExpressionParsingWithOpPrecedence(t *testing.T) {
+	tests := []struct {
+		in       string
+		expected string
+	}{
+		{
+			"a + b",
+			"(a + b)\n",
+		},
+		{
+			"a + b * c",
+			"(a + (b * c))\n",
+		},
+		{
+			"-a * b",
+			"((-a) * b)\n",
+		},
+		{
+			"a + b + c / d",
+			"((a + b) + (c / d))\n",
+		},
+		{
+			"a == b * c",
+			"(a == (b * c))\n",
+		},
+	}
+
+	for _, tst := range tests {
+		l := lexer.New(tst.in)
+		p := New(l)
+		prg := p.Parse()
+
+		if prg == nil {
+			t.Fatal("Got nil program")
+		}
+
+		if prg.String() != tst.expected {
+			t.Fatalf("Got %q, expected %q", prg.String(), tst.expected)
 		}
 	}
 }
